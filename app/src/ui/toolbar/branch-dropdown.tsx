@@ -19,6 +19,7 @@ import { dragAndDropManager } from '../../lib/drag-and-drop-manager'
 import { DragType } from '../../models/drag-drop'
 import { Popover, PopoverCaretPosition } from '../lib/popover'
 import { CICheckRunList } from '../branches/ci-check-run-list'
+import { enableCICheckRuns } from '../../lib/feature-flag'
 
 interface IBranchDropdownProps {
   readonly dispatcher: Dispatcher
@@ -54,26 +55,14 @@ interface IBranchDropdownProps {
 
   /** Whether this component should show its onboarding tutorial nudge arrow */
   readonly shouldNudge: boolean
-}
 
-interface IBranchDropdownState {
-  readonly isPopoverOpen: boolean
+  readonly showCIStatusPopover: boolean
 }
 
 /**
  * A drop down for selecting the currently checked out branch.
  */
-export class BranchDropdown extends React.Component<
-  IBranchDropdownProps,
-  IBranchDropdownState
-> {
-  public constructor(props: IBranchDropdownProps) {
-    super(props)
-    this.state = {
-      isPopoverOpen: false,
-    }
-  }
-
+export class BranchDropdown extends React.Component<IBranchDropdownProps> {
   private renderBranchFoldout = (): JSX.Element | null => {
     const repositoryState = this.props.repositoryState
     const branchesState = repositoryState.branchesState
@@ -196,7 +185,7 @@ export class BranchDropdown extends React.Component<
         >
           {this.renderPullRequestInfo()}
         </ToolbarDropdown>
-        {this.state.isPopoverOpen && this.renderPopover()}
+        {this.props.showCIStatusPopover && this.renderPopover()}
       </>
     )
   }
@@ -214,8 +203,18 @@ export class BranchDropdown extends React.Component<
     }
   }
 
+  public showCIStatus() {
+    if (!this.props.showCIStatusPopover && enableCICheckRuns()) {
+      this.togglePopover()
+    }
+  }
+
   private onBadgeClick = () => {
-    if (this.state.isPopoverOpen) {
+    this.togglePopover()
+  }
+
+  private togglePopover() {
+    if (this.props.showCIStatusPopover) {
       this.closePopover()
     } else {
       this.props.dispatcher.closeFoldout(FoldoutType.Branch)
@@ -224,17 +223,12 @@ export class BranchDropdown extends React.Component<
   }
 
   private openPopover = () => {
-    this.setState(prevState => {
-      if (!prevState.isPopoverOpen) {
-        return { isPopoverOpen: true }
-      }
-      return null
-    })
+    this.props.dispatcher.setShowCIStatusPopover(true)
   }
 
   private closePopover = (event?: MouseEvent) => {
     if (event === undefined) {
-      this.setState({ isPopoverOpen: false })
+      this.props.dispatcher.setShowCIStatusPopover(false)
       return
     }
 
@@ -249,7 +243,7 @@ export class BranchDropdown extends React.Component<
       return
     }
 
-    this.setState({ isPopoverOpen: false })
+    this.props.dispatcher.setShowCIStatusPopover(false)
   }
 
   private renderPopover() {

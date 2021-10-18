@@ -3691,4 +3691,12 @@ export class Dispatcher {
       currentBranch.tip.sha
     )
   }
+
+  public setShowCIStatusPopover(showCIStatusPopover: boolean) {
+    this.appStore._setShowCIStatusPopover(showCIStatusPopover)
+  }
+
+  public _toggleCIStatusPopover() {
+    this.appStore._toggleCIStatusPopover()
+  }
 }
